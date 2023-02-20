@@ -112,11 +112,9 @@ class _ProbaScorer(_BaseScorer):
         y_pred = clf.predict_proba(X, lamb=lamb)  # y_pred shape (n_samples, n_classes, n_lambda)
 
         if sample_weight is not None:
-            def score_func(y_hat):
-                return self._score_func(y_true, y_hat, sample_weight=sample_weight, **self._kwargs)
+            score_func = lambda y_hat: self._score_func(y_true, y_hat, sample_weight=sample_weight, **self._kwargs)
         else:
-            def score_func(y_hat):
-                return self._score_func(y_true, y_hat, **self._kwargs)
+            score_func = lambda y_hat: self._score_func(y_true, y_hat, **self._kwargs)
 
         scores = np.zeros(y_pred.shape[-1])
         for i in range(len(scores)):
