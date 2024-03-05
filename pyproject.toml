@@ -10,7 +10,8 @@ build-backend = "setuptools.build_meta"
 requires = [
     "numpy==1.22.4; python_version=='3.9'",
     "numpy==1.22.4; python_version=='3.10'",
-    "numpy; python_version>'3.10'",
+    "numpy==1.23.2; python_version=='3.11'",
+    "numpy; python_version>'3.11'",
     "setuptools",
     "wheel"
 ]
