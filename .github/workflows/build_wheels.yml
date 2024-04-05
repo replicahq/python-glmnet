@@ -17,6 +17,7 @@ jobs:
         run: |
           # https://github.com/actions/virtual-environments/issues/2524
           # https://github.com/cbg-ethz/dce/blob/master/.github/workflows/pkgdown.yaml
+          brew install gcc@11
           sudo ln -s /usr/local/bin/gfortran-11 /usr/local/bin/gfortran
           sudo mkdir /usr/local/gfortran
           sudo ln -s /usr/local/Cellar/gcc@11/*/lib/gcc/11 /usr/local/gfortran/lib

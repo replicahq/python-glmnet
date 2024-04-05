@@ -21,6 +21,3 @@ requires = [
 [tool.cibuildwheel]
 skip = "*-win32 *-win_amd64"
 before-all = "uname -a"
-
-[tool.cibuildwheel.macos]
-before-all = "brew install gcc"
