@@ -19,6 +19,9 @@ Python GLMNET
    :target: https://pypi.org/project/glmnet/
    :alt: Supported python versions for python-glmnet
 
+Fork of `python-glmnet <https://github.com/civisanalytics/python-glmnet>`_ with support for more recent
+Python versions.
+
 This is a Python wrapper for the fortran library used in the R package
 `glmnet <http://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html>`__.
 While the library includes linear, logistic, Cox, Poisson, and
@@ -63,7 +66,7 @@ For Mac users, ``brew install gcc`` will take care of this requirement.
 
 .. code:: bash
 
-    git clone git@github.com:civisanalytics/python-glmnet.git
+    git clone git@github.com:replicahq/python-glmnet.git
     cd python-glmnet
     python setup.py install
 
