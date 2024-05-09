@@ -62,8 +62,7 @@ jobs:
         with:
           name: artifact
           path: dist
-      - uses: pypa/gh-action-pypi-publish@master
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: ${{ secrets.PYPI_API_USER }}
-          password: ${{ secrets.PYPI_API_PASSWORD }}
-          repository_url: ${{ secrets.PYPI_API_URL }}
+          user: ${{ secrets.PYPI_USER }}
+          password: ${{ secrets.PYPI_PASSWORD }}

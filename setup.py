@@ -18,7 +18,7 @@ except ImportError:
              " \n  $ pip install numpy")
 
 
-_VERSION = "2.2.1"
+_VERSION = "2.2.2"
 
 f_compile_args = ['-ffixed-form', '-fdefault-real-8']
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
               "scipy>=0.14.1",
               "joblib>=0.14.1",
           ],
-          python_requires=">=3.6",
+          python_requires=">=3.9",
           # We need pkg_resources, shipped with setuptools,
           # for version numbering.
           setup_requires=["setuptools"],
@@ -87,9 +87,9 @@ if __name__ == "__main__":
               'Environment :: Console',
               'Programming Language :: Python',
               'Programming Language :: Python :: 3',
-              'Programming Language :: Python :: 3.6',
-              'Programming Language :: Python :: 3.7',
-              'Programming Language :: Python :: 3.8',
+              'Programming Language :: Python :: 3.9',
+              'Programming Language :: Python :: 3.10',
+              'Programming Language :: Python :: 3.11',
               'Programming Language :: Python :: 3 :: Only',
               'Operating System :: OS Independent',
               'Intended Audience :: Developers',

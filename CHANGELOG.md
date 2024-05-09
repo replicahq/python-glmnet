@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## 2.2.2 - 2024-05-09
+### Changed
+* [#3](https://github.com/replicahq/python-glmnet/pull/3)
+   - Python version support: Add 3.10 and 3.11, drop 3.8 and below.
+
 ## 2.2.1 - 2020-06-30
 ### Fix
 * [#65](https://github.com/civisanalytics/python-glmnet/pull/65)

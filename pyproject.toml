@@ -1,6 +1,6 @@
 [project]
-name = "glmnet"
-version = "2.2.1"
+name = "python-glmnet"
+version = "2.2.2"
 description = "Python wrapper for glmnet"
 readme = 'README.rst'
 requires-python = ">=3.9"
