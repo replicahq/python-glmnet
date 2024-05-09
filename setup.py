@@ -32,7 +32,7 @@ def get_lib_dir(dylib):
     import subprocess
     from os.path import realpath, dirname
 
-    p = subprocess.Popen("gfortran-10 -print-file-name={}".format(dylib),
+    p = subprocess.Popen("gfortran -print-file-name={}".format(dylib),
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          shell=True)
     retcode = p.wait()
