@@ -1,4 +1,8 @@
 [project]
+name = "glmnet"
+version = "2.2.1"
+description = "Python wrapper for glmnet"
+readme = 'README.rst'
 requires-python = ">=3.6"
 
 [build-system]
