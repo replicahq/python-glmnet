@@ -25,12 +25,12 @@ jobs:
         os: [macos-13, macos-14, ubuntu-20.04]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
         name: Install Python
         with:
           python-version: '3.10'
       - name: Build wheels
-        uses: joerick/cibuildwheel@v1.10.0
+        uses: pypa/cibuildwheel@v2.17.0
         env:
           CIBW_BEFORE_ALL_MACOS: "brew unlink gcc && brew link gcc" # gfortran and libs don't seem to be linked by default for some reason
           CIBW_BUILD: "cp39-* cp310-* cp311-*"
