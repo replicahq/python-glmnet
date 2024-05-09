@@ -76,7 +76,7 @@ if __name__ == "__main__":
               "scipy>=0.14.1",
               "joblib>=0.14.1",
           ],
-          python_requires=">=3.6.*",
+          python_requires=">=3.6",
           # We need pkg_resources, shipped with setuptools,
           # for version numbering.
           setup_requires=["setuptools"],
