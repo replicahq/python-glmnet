@@ -1,25 +1,21 @@
 Python GLMNET
 =============
 
-|CircleCI| |Conda| |PyPI| |PyVersions|
+|CircleCI| |PyPI| |PyVersions|
 
 .. |CircleCI| image:: https://circleci.com/gh/civisanalytics/python-glmnet.svg?style=svg
     :target: https://circleci.com/gh/civisanalytics/python-glmnet
     :alt: Build status
 
-.. |Conda| image:: https://anaconda.org/conda-forge/glmnet/badges/version.svg
-   :target: https://anaconda.org/conda-forge/glmnet
-   :alt: Latest version on conda forge
-
-.. |PyPI| image:: https://img.shields.io/pypi/v/glmnet.svg
-   :target: https://pypi.org/project/glmnet/
+.. |PyPI| image:: https://img.shields.io/pypi/v/python-glmnet.svg
+   :target: https://pypi.org/project/python-glmnet/
    :alt: Latest version on PyPI
 
-.. |PyVersions| image:: https://img.shields.io/pypi/pyversions/glmnet.svg
-   :target: https://pypi.org/project/glmnet/
+.. |PyVersions| image:: https://img.shields.io/pypi/pyversions/python-glmnet.svg
+   :target: https://pypi.org/project/python-glmnet/
    :alt: Supported python versions for python-glmnet
 
-Fork of `python-glmnet <https://github.com/civisanalytics/python-glmnet>`_ with support for more recent
+Fork of `python-glmnet <https://github.com/replicahq/python-glmnet>`_ with support for more recent
 Python versions.
 
 This is a Python wrapper for the fortran library used in the R package
@@ -38,7 +34,7 @@ Installation
 requirements
 ~~~~~~~~~~~~
 
-``python-glmnet`` requires Python version >= 3.6, ``scikit-learn``, ``numpy``,
+``python-glmnet`` requires Python version >= 3.9, ``scikit-learn``, ``numpy``,
 and ``scipy``. Installation from source or via ``pip`` requires a Fortran compiler.
 
 conda
@@ -54,7 +50,7 @@ pip
 
 .. code:: bash
 
-    pip install glmnet
+    pip install python-glmnet
 
 
 source

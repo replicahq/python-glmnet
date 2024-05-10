@@ -18,7 +18,7 @@ except ImportError:
              " \n  $ pip install numpy")
 
 
-_VERSION = "2.2.2.post1"
+_VERSION = "2.2.2.post2"
 
 f_compile_args = ['-ffixed-form', '-fdefault-real-8']
 
@@ -68,8 +68,8 @@ if __name__ == "__main__":
           long_description=read('README.rst'),
           long_description_content_type="text/x-rst",
           author="Civis Analytics Inc",
-          author_email="opensource@civisanalytics.com",
-          url="https://github.com/civisanalytics/python-glmnet",
+          author_email="opensource@replicahq.com",
+          url="https://github.com/replicahq/python-glmnet",
           install_requires=[
               "numpy>=1.9.2",
               "scikit-learn>=0.18.0",

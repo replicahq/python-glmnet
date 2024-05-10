@@ -1,9 +1,15 @@
 [project]
 name = "python-glmnet"
-version = "2.2.2.post1"
+version = "2.2.2.post2"
 description = "Python wrapper for glmnet"
 readme = 'README.rst'
 requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.9.2",
+    "scikit-learn>=0.18.0",
+    "scipy>=0.14.1",
+    "joblib>=0.14.1",
+]
 
 [build-system]
 build-backend = "setuptools.build_meta"
