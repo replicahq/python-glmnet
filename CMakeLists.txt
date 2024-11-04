@@ -6,29 +6,39 @@ if(POLICY CMP0148)
   cmake_policy(SET CMP0148 NEW)
 endif()
 
-# Find Python
-find_package(Python 3.6 
+# Find Python first
+find_package(Python 
     REQUIRED 
     COMPONENTS 
         Interpreter 
-        Development.Module 
-    OPTIONAL_COMPONENTS 
-        NumPy
+        Development.Module
 )
 
-if(NOT Python_NumPy_FOUND)
+# Then find NumPy separately using Python to ensure it's found correctly
+execute_process(
+    COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE NUMPY_FIND_RESULT
+)
+
+if(NOT NUMPY_FIND_RESULT EQUAL 0)
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -m pip install numpy
+        RESULT_VARIABLE NUMPY_INSTALL_RESULT
+    )
+    if(NOT NUMPY_INSTALL_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to install NumPy")
+    endif()
     execute_process(
         COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-        OUTPUT_VARIABLE Python_NumPy_INCLUDE_DIRS
+        OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE _NUMPY_SEARCH_SUCCESS
+        RESULT_VARIABLE NUMPY_FIND_RESULT
     )
-    if(_NUMPY_SEARCH_SUCCESS MATCHES 0)
-        set(Python_NumPy_FOUND TRUE)
-    endif()
 endif()
 
-if(NOT Python_NumPy_FOUND)
+if(NOT NUMPY_FIND_RESULT EQUAL 0)
     message(FATAL_ERROR "NumPy is required to build this project")
 endif()
 
@@ -43,7 +53,7 @@ add_library(_glmnet MODULE
 )
 
 target_include_directories(_glmnet PRIVATE 
-    ${Python_NumPy_INCLUDE_DIRS}
+    ${NUMPY_INCLUDE_DIR}
 )
 
 # Set Fortran specific properties

@@ -1,9 +1,5 @@
 [build-system]
-requires = [
-    "scikit-build-core>=0.8.0",
-    "numpy>=1.9.2",
-    "cmake>=3.15",
-]
+requires = ["scikit-build-core"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -43,18 +39,14 @@ Homepage = "https://github.com/civisanalytics/python-glmnet"
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
-cmake.version = "3.15"
+cmake.version = ">=3.15"
 cmake.build-type = "Release"
-cmake.install.strip = true  # Strip debug symbols from binaries
+cmake.args = ["-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON"]
 
 [tool.scikit-build.cmake.define]
 CMAKE_Fortran_FLAGS = "-ffixed-form -fdefault-real-8"
 Python_FIND_FRAMEWORK = "LAST"
-
-[tool.scikit-build.metadata]
-install_requires = [
-    "numpy>=1.9.2",  # Ensure numpy is installed before building
-]
+CMAKE_INSTALL_RPATH = "@loader_path"
 
 [tool.scikit-build.sdist]
 include = [
