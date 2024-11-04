@@ -1,23 +1,73 @@
+[build-system]
+requires = [
+    "scikit-build-core>=0.8.0",
+    "numpy>=1.9.2",
+    "cmake>=3.15",
+]
+build-backend = "scikit_build_core.build"
+
 [project]
 name = "glmnet"
-requires-python = ">=3.6"
 version = "2.2.1"
 description = "Python wrapper for glmnet"
-readme = 'README.rst'
-
-[build-system]
-build-backend = "setuptools.build_meta"
-# We need at least 1.19.0 for ABI compatibility, but otherwise prefer the oldest available wheel (eg: 1.19.3 for py3.9)
-requires = [
-    "numpy==1.19.0; python_version<'3.9'",
-    "numpy==1.19.3; python_version=='3.9'",
-    "numpy==1.22.4; python_version=='3.10'",
-    "numpy==1.23.2; python_version=='3.11'",
-    "numpy; python_version>'3.11'",
-    "setuptools",
-    "wheel"
+readme = "README.rst"
+requires-python = ">=3.6"
+license = {text = "GNU General Public License v2 (GPLv2)"}
+authors = [
+    {name = "Civis Analytics Inc", email = "opensource@civisanalytics.com"},
+]
+dependencies = [
+    "numpy>=1.9.2",
+    "scikit-learn>=0.18.0",
+    "scipy>=0.14.1",
+    "joblib>=0.14.1",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Topic :: Scientific/Engineering",
 ]
 
-[tool.cibuildwheel]
-skip = "*-win32 *-win_amd64"
-before-all = "uname -a"
+[project.urls]
+Homepage = "https://github.com/civisanalytics/python-glmnet"
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+cmake.version = "3.15"
+cmake.build-type = "Release"
+cmake.install.strip = true  # Strip debug symbols from binaries
+
+[tool.scikit-build.cmake.define]
+CMAKE_Fortran_FLAGS = "-ffixed-form -fdefault-real-8"
+Python_FIND_FRAMEWORK = "LAST"
+
+[tool.scikit-build.metadata]
+install_requires = [
+    "numpy>=1.9.2",  # Ensure numpy is installed before building
+]
+
+[tool.scikit-build.sdist]
+include = [
+    "glmnet/*.py",
+    "glmnet/*.pyf",
+    "glmnet/src/glmnet/*.f90",
+    "CMakeLists.txt",
+    "README.rst",
+]
+exclude = [
+    "*.pyc",
+    "*/__pycache__",
+    ".git*",
+    "dist",
+    "build",
+]
