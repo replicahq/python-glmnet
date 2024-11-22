@@ -4,22 +4,22 @@ project(glmnet LANGUAGES Fortran)
 # Set Fortran flags for fixed-form
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffixed-form")
 
-# Set policy for new behavior regarding find_package(Python)
+# Set policy for new behavior regarding find_package(Python3)
 if(POLICY CMP0148)
   cmake_policy(SET CMP0148 NEW)
 endif()
 
-# Find Python first
-find_package(Python 
-    REQUIRED 
-    COMPONENTS 
-        Interpreter 
+# Find Python3 first
+find_package(Python3
+    REQUIRED
+    COMPONENTS
+        Interpreter
         Development.Module
 )
 
 # Then find NumPy
 execute_process(
-    COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+    COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
     RESULT_VARIABLE NUMPY_FOUND
     OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -28,14 +28,14 @@ execute_process(
 if(NOT NUMPY_FOUND EQUAL 0)
     message(STATUS "NumPy not found. Attempting to install...")
     execute_process(
-        COMMAND "${Python_EXECUTABLE}" -m pip install numpy
+        COMMAND "${Python3_EXECUTABLE}" -m pip install numpy
         RESULT_VARIABLE NUMPY_INSTALL_RESULT
     )
     if(NOT NUMPY_INSTALL_RESULT EQUAL 0)
         message(FATAL_ERROR "Failed to install NumPy")
     endif()
     execute_process(
-        COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+        COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
         RESULT_VARIABLE NUMPY_FOUND
         OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -56,16 +56,6 @@ add_library(_glmnet MODULE
     glmnet/_glmnet.pyf
 )
 
-set_target_properties(_glmnet PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME "_glmnet"
-    SUFFIX "${Python_EXTENSION_SUFFIX}"
-)
-
-target_include_directories(_glmnet PRIVATE
-    ${NUMPY_INCLUDE_DIR}
-)
-
 # Set Fortran specific properties
 if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     if(APPLE)
@@ -82,8 +72,8 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
         )
         get_filename_component(GFORTRAN_LIB_DIR "${GFORTRAN_LIB}" DIRECTORY)
         get_filename_component(QUADMATH_LIB_DIR "${QUADMATH_LIB}" DIRECTORY)
-        
-        target_link_directories(_glmnet PRIVATE 
+
+        target_link_directories(_glmnet PRIVATE
             "${GFORTRAN_LIB_DIR}"
             "${QUADMATH_LIB_DIR}"
         )
@@ -96,6 +86,22 @@ endif()
 # Set the output directory for Fortran modules
 set_target_properties(_glmnet PROPERTIES
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules"
+)
+
+# Use Python3 variables for extension suffix
+set_target_properties(_glmnet PROPERTIES
+    PREFIX ""
+    SUFFIX "${Python3_EXTENSION_SUFFIX}"
+)
+
+# Ensure the module is output to the current directory
+set_target_properties(_glmnet PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
+# Include directories
+target_include_directories(_glmnet PRIVATE
+    ${NUMPY_INCLUDE_DIR}
 )
 
 install(TARGETS _glmnet DESTINATION .)
