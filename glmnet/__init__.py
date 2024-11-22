@@ -1,8 +1,12 @@
-import pkg_resources
+from importlib.metadata import version, PackageNotFoundError
 
 from .logistic import LogitNet
 from .linear import ElasticNet
 
 __all__ = ['LogitNet', 'ElasticNet']
 
-__version__ = pkg_resources.get_distribution("glmnet").version
+try:
+    __version__ = version("glmnet")
+except PackageNotFoundError:
+    # package is not installed
+    __version__ = "unknown"

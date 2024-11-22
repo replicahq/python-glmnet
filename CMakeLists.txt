@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 project(glmnet LANGUAGES Fortran)
 
+# Set Fortran flags for fixed-form
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffixed-form")
+
 # Set policy for new behavior regarding find_package(Python)
 if(POLICY CMP0148)
   cmake_policy(SET CMP0148 NEW)
@@ -14,15 +17,16 @@ find_package(Python
         Development.Module
 )
 
-# Then find NumPy separately using Python to ensure it's found correctly
+# Then find NumPy
 execute_process(
     COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+    RESULT_VARIABLE NUMPY_FOUND
     OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE NUMPY_FIND_RESULT
 )
 
-if(NOT NUMPY_FIND_RESULT EQUAL 0)
+if(NOT NUMPY_FOUND EQUAL 0)
+    message(STATUS "NumPy not found. Attempting to install...")
     execute_process(
         COMMAND "${Python_EXECUTABLE}" -m pip install numpy
         RESULT_VARIABLE NUMPY_INSTALL_RESULT
@@ -32,13 +36,13 @@ if(NOT NUMPY_FIND_RESULT EQUAL 0)
     endif()
     execute_process(
         COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+        RESULT_VARIABLE NUMPY_FOUND
         OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE NUMPY_FIND_RESULT
     )
 endif()
 
-if(NOT NUMPY_FIND_RESULT EQUAL 0)
+if(NOT NUMPY_FOUND EQUAL 0)
     message(FATAL_ERROR "NumPy is required to build this project")
 endif()
 
@@ -48,11 +52,17 @@ set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f90)
 
 # Add Fortran library
 add_library(_glmnet MODULE
-    glmnet/src/glmnet/glmnet5.f90
+    glmnet/src/glmnet/glmnet5.f
     glmnet/_glmnet.pyf
 )
 
-target_include_directories(_glmnet PRIVATE 
+set_target_properties(_glmnet PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "_glmnet"
+    SUFFIX "${Python_EXTENSION_SUFFIX}"
+)
+
+target_include_directories(_glmnet PRIVATE
     ${NUMPY_INCLUDE_DIR}
 )
 
@@ -83,10 +93,9 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     endif()
 endif()
 
-# Set the output directory and naming convention for the extension
+# Set the output directory for Fortran modules
 set_target_properties(_glmnet PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME "_glmnet"
-    SUFFIX "${Python_EXTENSION_SUFFIX}"
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules"
 )
+
+install(TARGETS _glmnet DESTINATION .)
