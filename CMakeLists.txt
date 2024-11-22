@@ -8,8 +8,14 @@ else()
     message(STATUS "Building outside of scikit-build-core.")
 endif()
 
-# Set Fortran flags for fixed-form
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffixed-form -fdefault-real-8")
+# Reset Fortran flags to prevent unwanted flags
+set(CMAKE_Fortran_FLAGS "")
+
+# Set Fortran flags for default real kind
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8")
+
+# Print the Fortran compiler flags
+message(STATUS "CMAKE_Fortran_FLAGS: ${CMAKE_Fortran_FLAGS}")
 
 # Find Python components
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
@@ -24,38 +30,6 @@ if(SKBUILD)
     set(Python_EXTENSION_SUFFIX ".${SKBUILD_SOABI}${CMAKE_SHARED_MODULE_SUFFIX}")
 else()
     # Fallback if not using scikit-build-core
-if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    if(APPLE)
-        # Handle macOS specific linking
-        execute_process(
-            COMMAND ${CMAKE_Fortran_COMPILER} -print-file-name=libgfortran.5.dylib
-            OUTPUT_VARIABLE GFORTRAN_LIB
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        execute_process(
-            COMMAND ${CMAKE_Fortran_COMPILER} -print-file-name=libquadmath.0.dylib
-            OUTPUT_VARIABLE QUADMATH_LIB
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        get_filename_component(GFORTRAN_LIB_DIR "${GFORTRAN_LIB}" DIRECTORY)
-        get_filename_component(QUADMATH_LIB_DIR "${QUADMATH_LIB}" DIRECTORY)
-
-        target_link_directories(_glmnet PRIVATE
-            "${GFORTRAN_LIB_DIR}"
-            "${QUADMATH_LIB_DIR}"
-        )
-
-        # Set the RPATH to include the directories
-        set_target_properties(_glmnet PROPERTIES
-            INSTALL_RPATH "${GFORTRAN_LIB_DIR};${QUADMATH_LIB_DIR}"
-        )
-
-        # Add linker flags
-        target_link_libraries(_glmnet PRIVATE
-            "-Wl,-rpath,${GFORTRAN_LIB_DIR}:${QUADMATH_LIB_DIR}"
-        )
-    endif()
-endif()
     execute_process(
         COMMAND "${Python_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
         OUTPUT_VARIABLE Python_EXTENSION_SUFFIX
@@ -77,10 +51,6 @@ if(NOT NUMPY_FOUND EQUAL 0 OR NOT NUMPY_INCLUDE_DIR)
     message(FATAL_ERROR "NumPy is required to build this project")
 endif()
 
-# Enable Fortran 90 support
-enable_language(Fortran)
-set(CMAKE_Fortran_SOURCE_FILE_EXTENSIONS f90)
-
 # Generate wrapper code using f2py
 execute_process(
     COMMAND "${Python_EXECUTABLE}" -m numpy.f2py
@@ -93,7 +63,18 @@ execute_process(
 # Add Fortran library with wrapper code
 add_library(_glmnet MODULE
     "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.f90"
-    glmnet/src/glmnet/glmnet5.f90
+    glmnet/src/glmnet/glmnet5.f
+)
+
+# Set per-source file compilation flags
+set_source_files_properties(
+    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.f90"
+    PROPERTIES COMPILE_FLAGS "-ffree-form"
+)
+
+set_source_files_properties(
+    glmnet/src/glmnet/glmnet5.f
+    PROPERTIES COMPILE_FLAGS "-ffixed-form"
 )
 
 # Set the output directory for Fortran modules
@@ -161,15 +142,11 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     endif()
 endif()
 
-# Retrieve the Python extension module suffix
+# Install the module to the appropriate directory
 if(SKBUILD)
-    # Use SKBUILD_SOABI provided by scikit-build-core
-    set(Python_EXTENSION_SUFFIX ".${SKBUILD_SOABI}${CMAKE_SHARED_MODULE_SUFFIX}")
-else()
-    # Fallback if not using scikit-build-core
-    execute_process(
-        COMMAND "${Python_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
-        OUTPUT_VARIABLE Python_EXTENSION_SUFFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+    install(TARGETS _glmnet
+        LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}"
     )
+else()
+    install(TARGETS _glmnet DESTINATION ".")
 endif()
