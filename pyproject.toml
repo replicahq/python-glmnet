@@ -51,7 +51,7 @@ include-package-data = true
 glmnet = ["*.so", "*.pyd", "*.dll"]
 
 [tool.scikit-build.cmake.define]
-CMAKE_Fortran_FLAGS = "-ffixed-form -fdefault-real-8"
+CMAKE_Fortran_FLAGS = "-fdefault-real-8"
 Python_FIND_FRAMEWORK = "LAST"
 CMAKE_INSTALL_RPATH = "@loader_path"
 

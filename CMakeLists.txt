@@ -56,25 +56,29 @@ execute_process(
     COMMAND "${Python_EXECUTABLE}" -m numpy.f2py
             "${CMAKE_SOURCE_DIR}/glmnet/_glmnet.pyf"
             -m _glmnet
-            -h "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.f90"
+            -h "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.F90"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 # Add Fortran library with wrapper code
 add_library(_glmnet MODULE
-    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.f90"
+    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.F90"
     glmnet/src/glmnet/glmnet5.f
 )
 
-# Set per-source file compilation flags
+# Set per-source file properties for the wrapper file
 set_source_files_properties(
-    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.f90"
-    PROPERTIES COMPILE_FLAGS "-ffree-form"
+    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.F90"
+    PROPERTIES
+        Fortran_FORMAT FREE
+        Fortran_PREPROCESS OFF  # Ensure CMake does not preprocess
 )
 
+# Set per-source file properties for the Fortran source file
 set_source_files_properties(
     glmnet/src/glmnet/glmnet5.f
-    PROPERTIES COMPILE_FLAGS "-ffixed-form"
+    PROPERTIES
+        Fortran_FORMAT FIXED
 )
 
 # Set the output directory for Fortran modules
