@@ -88,10 +88,20 @@ set_target_properties(_glmnet PROPERTIES
     Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules"
 )
 
+# Retrieve the Python extension module suffix
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
+    OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Debug message to check the retrieved suffix
+message(STATUS "Python extension module suffix: ${PYTHON_EXT_SUFFIX}")
+
 # Use Python3 variables for extension suffix
 set_target_properties(_glmnet PROPERTIES
     PREFIX ""
-    SUFFIX "${Python3_EXTENSION_SUFFIX}"
+    SUFFIX "${PYTHON_EXT_SUFFIX}"
 )
 
 # Ensure the module is output to the current directory
