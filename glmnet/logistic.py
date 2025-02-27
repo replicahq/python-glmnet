@@ -11,7 +11,25 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.utils.multiclass import check_classification_targets
 
 from .errors import _check_error_flag
-from _glmnet import lognet, splognet, lsolns
+
+try:
+    from ._glmnet import lognet, splognet, lsolns
+except ImportError:
+    # Fall back to non-relative import
+    try:
+        from _glmnet import lognet, splognet, lsolns
+    except ImportError:
+        import warnings
+        warnings.warn("Could not import _glmnet module. Some functionality may be limited.")
+        # Define placeholder functions for documentation purposes
+        def lognet(*args, **kwargs):
+            raise NotImplementedError("_glmnet module is not available")
+        
+        def splognet(*args, **kwargs):
+            raise NotImplementedError("_glmnet module is not available")
+        
+        def lsolns(*args, **kwargs):
+            raise NotImplementedError("_glmnet module is not available")
 from glmnet.util import (_fix_lambda_path,
                          _check_user_lambda,
                          _interpolate_model,

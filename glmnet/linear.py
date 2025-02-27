@@ -9,7 +9,25 @@ from sklearn.model_selection import KFold, GroupKFold
 from sklearn.utils import check_array, check_X_y
 
 from .errors import _check_error_flag
-from _glmnet import elnet, spelnet, solns
+
+try:
+    from ._glmnet import elnet, spelnet, solns
+except ImportError:
+    # Fall back to non-relative import
+    try:
+        from _glmnet import elnet, spelnet, solns
+    except ImportError:
+        import warnings
+        warnings.warn("Could not import _glmnet module. Some functionality may be limited.")
+        # Define placeholder functions for documentation purposes
+        def elnet(*args, **kwargs):
+            raise NotImplementedError("_glmnet module is not available")
+        
+        def spelnet(*args, **kwargs):
+            raise NotImplementedError("_glmnet module is not available")
+        
+        def solns(*args, **kwargs):
+            raise NotImplementedError("_glmnet module is not available")
 from glmnet.util import (_fix_lambda_path,
                          _check_user_lambda,
                          _interpolate_model,

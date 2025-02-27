@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "numpy"]
+requires = ["scikit-build-core", "numpy", "wheel"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -59,7 +59,7 @@ CMAKE_INSTALL_RPATH = "@loader_path"
 include = [
     "glmnet/*.py",
     "glmnet/*.pyf",
-    "glmnet/src/glmnet/*.f90",
+    "glmnet/src/glmnet/*.f*",
     "CMakeLists.txt",
     "README.rst",
 ]
@@ -70,3 +70,5 @@ exclude = [
     "dist",
     "build",
 ]
+
+# We'll rely on the runtime import mechanism in __init__.py to build the module if needed

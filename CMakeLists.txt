@@ -24,93 +24,108 @@ find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
 message(STATUS "Python_EXECUTABLE: ${Python_EXECUTABLE}")
 message(STATUS "Python_SOABI: ${Python_SOABI}")
 
-# Retrieve the Python extension module suffix
+# Install pyf file (needed for f2py)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/glmnet/_glmnet.pyf"
+    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet.pyf"
+    COPYONLY
+)
+
+# Install Fortran source file
+configure_file(
+    "${CMAKE_SOURCE_DIR}/glmnet/src/glmnet/glmnet5.f"
+    "${CMAKE_CURRENT_BINARY_DIR}/glmnet5.f"
+    COPYONLY
+)
+
+# Create a custom target for building the extension module with f2py
+# We'll use build_ext to handle this outside of CMake
+add_custom_target(copy_fortran_files ALL
+    DEPENDS 
+        "${CMAKE_CURRENT_BINARY_DIR}/_glmnet.pyf"
+        "${CMAKE_CURRENT_BINARY_DIR}/glmnet5.f"
+    COMMENT "Copied Fortran files for external f2py build"
+)
+
+# Create directory structure
 if(SKBUILD)
-    # Use SKBUILD_SOABI provided by scikit-build-core
-    set(Python_EXTENSION_SUFFIX ".${SKBUILD_SOABI}${CMAKE_SHARED_MODULE_SUFFIX}")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/glmnet/src")
 else()
-    # Fallback if not using scikit-build-core
-    execute_process(
-        COMMAND "${Python_EXECUTABLE}" -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX'))"
-        OUTPUT_VARIABLE Python_EXTENSION_SUFFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/glmnet/src")
+endif()
+
+# Install all necessary files
+if(SKBUILD)
+    # Install Python files
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/__init__.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/linear.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/logistic.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/util.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/scorer.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/errors.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/doc.py"
+        DESTINATION "${SKBUILD_PLATLIB_DIR}/glmnet"
+    )
+    
+    # Install build module script
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/build_module.py"
+        DESTINATION "${SKBUILD_PLATLIB_DIR}/glmnet"
+    )
+    
+    # Install pyf file
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/_glmnet.pyf"
+        DESTINATION "${SKBUILD_PLATLIB_DIR}/glmnet"
+    )
+    
+    # Install Fortran source file
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/src/glmnet/glmnet5.f"
+        DESTINATION "${SKBUILD_PLATLIB_DIR}/glmnet/src"
+    )
+    
+    # Create an empty src directory
+    install(DIRECTORY
+        DESTINATION "${SKBUILD_PLATLIB_DIR}/glmnet/src"
+    )
+else()
+    # Install Python files
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/__init__.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/linear.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/logistic.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/util.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/scorer.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/errors.py"
+        "${CMAKE_SOURCE_DIR}/glmnet/doc.py"
+        DESTINATION "glmnet"
+    )
+    
+    # Install build module script
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/build_module.py"
+        DESTINATION "glmnet"
+    )
+    
+    # Install pyf file
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/_glmnet.pyf"
+        DESTINATION "glmnet"
+    )
+    
+    # Install Fortran source file
+    install(FILES
+        "${CMAKE_SOURCE_DIR}/glmnet/src/glmnet/glmnet5.f"
+        DESTINATION "glmnet/src"
+    )
+    
+    # Create an empty src directory
+    install(DIRECTORY
+        DESTINATION "glmnet/src"
     )
 endif()
-
-message(STATUS "Python extension module suffix: ${Python_EXTENSION_SUFFIX}")
-
-# Then find NumPy
-execute_process(
-    COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-    OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE NUMPY_FOUND
-)
-
-if(NOT NUMPY_FOUND EQUAL 0 OR NOT NUMPY_INCLUDE_DIR)
-    message(FATAL_ERROR "NumPy is required to build this project")
-endif()
-
-# Generate wrapper code using f2py
-execute_process(
-    COMMAND "${Python_EXECUTABLE}" -m numpy.f2py
-            "${CMAKE_SOURCE_DIR}/glmnet/_glmnet.pyf"
-            -m _glmnet
-            -h "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.F90"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
-# Add Fortran library with wrapper code
-add_library(_glmnet MODULE
-    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.F90"
-    glmnet/src/glmnet/glmnet5.f
-)
-
-# Set per-source file properties for the wrapper file
-set_source_files_properties(
-    "${CMAKE_CURRENT_BINARY_DIR}/_glmnet_f2pywrappers.F90"
-    PROPERTIES
-        Fortran_FORMAT FREE
-        Fortran_PREPROCESS OFF  # Ensure CMake does not preprocess
-)
-
-# Set per-source file properties for the Fortran source file
-set_source_files_properties(
-    glmnet/src/glmnet/glmnet5.f
-    PROPERTIES
-        Fortran_FORMAT FIXED
-)
-
-# Set the output directory for Fortran modules
-set_target_properties(_glmnet PROPERTIES
-    Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/modules"
-)
-
-# Set the SUFFIX property using the retrieved extension
-set_target_properties(_glmnet PROPERTIES
-    PREFIX ""
-    SUFFIX "${Python_EXTENSION_SUFFIX}"
-)
-
-# Ensure the module is output to the appropriate directory
-if(SKBUILD)
-    set(LIBRARY_OUTPUT_DIR "${SKBUILD_PLATLIB_DIR}")
-else()
-    set(LIBRARY_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-endif()
-
-set_target_properties(_glmnet PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${LIBRARY_OUTPUT_DIR}"
-)
-
-# Include directories
-target_include_directories(_glmnet PRIVATE
-    ${NUMPY_INCLUDE_DIR}
-    ${Python_INCLUDE_DIRS}
-)
-
-# Link against Python libraries if necessary
-target_link_libraries(_glmnet PRIVATE ${Python_LIBRARIES})
 
 # Handle macOS-specific settings
 if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
@@ -128,29 +143,8 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
         )
         get_filename_component(GFORTRAN_LIB_DIR "${GFORTRAN_LIB}" DIRECTORY)
         get_filename_component(QUADMATH_LIB_DIR "${QUADMATH_LIB}" DIRECTORY)
-
-        target_link_directories(_glmnet PRIVATE
-            "${GFORTRAN_LIB_DIR}"
-            "${QUADMATH_LIB_DIR}"
-        )
-
-        # Set the RPATH to include the directories
-        set_target_properties(_glmnet PROPERTIES
-            INSTALL_RPATH "${GFORTRAN_LIB_DIR};${QUADMATH_LIB_DIR}"
-        )
-
-        # Add linker flags
-        target_link_libraries(_glmnet PRIVATE
-            "-Wl,-rpath,${GFORTRAN_LIB_DIR}:${QUADMATH_LIB_DIR}"
-        )
+        
+        message(STATUS "gfortran library directory: ${GFORTRAN_LIB_DIR}")
+        message(STATUS "quadmath library directory: ${QUADMATH_LIB_DIR}")
     endif()
-endif()
-
-# Install the module to the appropriate directory
-if(SKBUILD)
-    install(TARGETS _glmnet
-        LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}"
-    )
-else()
-    install(TARGETS _glmnet DESTINATION ".")
 endif()
