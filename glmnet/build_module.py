@@ -20,18 +20,26 @@ def build_module():
     
     # Try to find the source file in several possible locations
     src_file = None
+    
+    # Get site-packages directory from sys.path
+    site_packages_dirs = [Path(p) for p in sys.path if 'site-packages' in p]
+    
+    # Build list of possible locations
     possible_locations = [
         script_dir / 'src' / 'glmnet5.f',
         script_dir / 'src' / 'glmnet' / 'glmnet5.f',
-        Path('/usr/local/lib/python3.11/site-packages/glmnet/src/glmnet5.f'),
-        Path('/opt/homebrew/lib/python3.11/site-packages/glmnet/src/glmnet5.f'),
-        Path('/usr/local/lib/python3.12/site-packages/glmnet/src/glmnet5.f'),
-        Path('/opt/homebrew/lib/python3.12/site-packages/glmnet/src/glmnet5.f')
     ]
+    
+    # Add site-packages locations dynamically
+    for site_dir in site_packages_dirs:
+        possible_locations.append(site_dir / 'glmnet' / 'src' / 'glmnet5.f')
+    
+    print(f"Searching for glmnet5.f in these locations: {possible_locations}")
     
     for loc in possible_locations:
         if loc.exists():
             src_file = loc
+            print(f"Found source file at: {src_file}")
             break
     
     if src_file is None:
