@@ -24,7 +24,9 @@ def build_module():
         script_dir / 'src' / 'glmnet5.f',
         script_dir / 'src' / 'glmnet' / 'glmnet5.f',
         Path('/usr/local/lib/python3.11/site-packages/glmnet/src/glmnet5.f'),
-        Path('/opt/homebrew/lib/python3.11/site-packages/glmnet/src/glmnet5.f')
+        Path('/opt/homebrew/lib/python3.11/site-packages/glmnet/src/glmnet5.f'),
+        Path('/usr/local/lib/python3.12/site-packages/glmnet/src/glmnet5.f'),
+        Path('/opt/homebrew/lib/python3.12/site-packages/glmnet/src/glmnet5.f')
     ]
     
     for loc in possible_locations:
@@ -43,17 +45,36 @@ def build_module():
         return 1
     
     # Call f2py to build the extension module
-    cmd = [
-        sys.executable, 
-        "-m", "numpy.f2py", 
-        "-c",
-        str(pyf_file),
-        str(src_file),
-        "-m", "_glmnet",
-        "--fcompiler=gnu95",
-        "--f77flags=-fdefault-real-8", 
-        "--f90flags=-fdefault-real-8"
-    ]
+    # Check Python version to determine which flags to use
+    if sys.version_info >= (3, 12):
+        # For Python 3.12+ using meson backend
+        cmd = [
+            sys.executable, 
+            "-m", "numpy.f2py", 
+            "-c",
+            str(pyf_file),
+            str(src_file),
+            "-m", "_glmnet",
+            # Meson doesn't use fcompiler flag
+            # Instead set flags directly
+            "--f77flags=-fdefault-real-8", 
+            "--f90flags=-fdefault-real-8"
+        ]
+        # Set fortran compiler environment variable
+        os.environ["FC"] = "gfortran"
+    else:
+        # For Python 3.11 and earlier
+        cmd = [
+            sys.executable, 
+            "-m", "numpy.f2py", 
+            "-c",
+            str(pyf_file),
+            str(src_file),
+            "-m", "_glmnet",
+            "--fcompiler=gnu95",
+            "--f77flags=-fdefault-real-8", 
+            "--f90flags=-fdefault-real-8"
+        ]
     
     try:
         subprocess.run(cmd, check=True)
