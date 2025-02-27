@@ -2,6 +2,31 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.6.1 - 2024-11-18
+### Changed
+* Parameterized unit tests in nox to test a range of python versions > 3.10 and
+  numpy >1.26
+  * Trying to get 3.9 to work is a bust
+
+## 2.6.0 - 2024-11-16
+### Changed
+* In root `meson.build`, replace `import numpy` and `numpy.f2py.get_include()` to 
+  `from numpy import f2py` and `f2py.get_include()` to allow numpy < 2.0 to work
+* Rewrote unittest-style tests as pytest-style tests
+* Add Nox
+* Formatting and linting using Ruff
+* Revert usage of structural pattern matching so earlier versions of python work
+
+## 2.5.0 - 2024-11-13
+
+### Changed
+* Python version support: Allow 3.12 and newer versions of numpy
+  that lack numpy.code.distutils
+* Replace Numpy-based build system with Meson
+* Remove setup.py and move all information into pyproject.toml
+* Formatting and linting using Ruff
+* Changed package layout to src-type, moved tests outside
+
 ## Unreleased
 
 ## 2.2.2 - 2024-05-09

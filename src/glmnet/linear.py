@@ -1,19 +1,23 @@
+from typing import Final
+
 import numpy as np
-
-from scipy.sparse import issparse, csc_matrix
 from scipy import stats
-
+from scipy.sparse import csc_matrix, issparse
 from sklearn.base import BaseEstimator
 from sklearn.metrics import r2_score
-from sklearn.model_selection import KFold, GroupKFold
+from sklearn.model_selection import GroupKFold, KFold
 from sklearn.utils import check_array, check_X_y
 
-from .errors import _check_error_flag
-from _glmnet import elnet, spelnet, solns
-from glmnet.util import (_fix_lambda_path,
-                         _check_user_lambda,
-                         _interpolate_model,
-                         _score_lambda_path)
+from glmnet._glmnet import elnet, solns, spelnet
+from glmnet.errors import _check_error_flag
+from glmnet.util import (
+    _check_user_lambda,
+    _fix_lambda_path,
+    _interpolate_model,
+    _score_lambda_path,
+)
+
+THERE_ARE_AT_LEAST_THREE_SPLITS: Final[int] = 3
 
 
 class ElasticNet(BaseEstimator):
@@ -133,12 +137,26 @@ class ElasticNet(BaseEstimator):
         performs within cut_point * standard error of lambda_max_.
     """
 
-    def __init__(self, alpha=1, n_lambda=100, min_lambda_ratio=1e-4,
-                 lambda_path=None, standardize=True, fit_intercept=True,
-                 lower_limits=-np.inf, upper_limits=np.inf,
-                 cut_point=1.0, n_splits=3, scoring=None, n_jobs=1, tol=1e-7,
-                 max_iter=100000, random_state=None, max_features=None, verbose=False):
-
+    def __init__(
+        self,
+        alpha=1,
+        n_lambda=100,
+        min_lambda_ratio=1e-4,
+        lambda_path=None,
+        standardize=True,
+        fit_intercept=True,
+        lower_limits=-np.inf,
+        upper_limits=np.inf,
+        cut_point=1.0,
+        n_splits=3,
+        scoring=None,
+        n_jobs=1,
+        tol=1e-7,
+        max_iter=100000,
+        random_state=None,
+        max_features=None,
+        verbose=False,
+    ):
         self.alpha = alpha
         self.n_lambda = n_lambda
         self.min_lambda_ratio = min_lambda_ratio
@@ -199,7 +217,7 @@ class ElasticNet(BaseEstimator):
             Returns self.
         """
 
-        X, y = check_X_y(X, y, accept_sparse='csr', ensure_min_samples=2)
+        X, y = check_X_y(X, y, accept_sparse="csr", ensure_min_samples=2)
         if sample_weight is None:
             sample_weight = np.ones(X.shape[0])
         else:
@@ -208,39 +226,50 @@ class ElasticNet(BaseEstimator):
         if not np.isscalar(self.lower_limits):
             self.lower_limits = np.asarray(self.lower_limits)
             if len(self.lower_limits) != X.shape[1]:
-                raise ValueError("lower_limits must equal number of features")
+                msg = "lower_limits must equal number of features"
+                raise ValueError(msg)
 
         if not np.isscalar(self.upper_limits):
             self.upper_limits = np.asarray(self.upper_limits)
             if len(self.upper_limits) != X.shape[1]:
-                raise ValueError("upper_limits must equal number of features")
+                msg = "upper_limits must equal number of features"
+                raise ValueError(msg)
 
         if any(self.lower_limits > 0) if isinstance(self.lower_limits, np.ndarray) else self.lower_limits > 0:
-            raise ValueError("lower_limits must be non-positive")
+            msg = "lower_limits must be non-positive"
+            raise ValueError(msg)
 
         if any(self.upper_limits < 0) if isinstance(self.upper_limits, np.ndarray) else self.upper_limits < 0:
-            raise ValueError("upper_limits must be positive")
+            msg = "upper_limits must be positive"
+            raise ValueError(msg)
 
         if self.alpha > 1 or self.alpha < 0:
-            raise ValueError("alpha must be between 0 and 1")
+            msg = "alpha must be between 0 and 1"
+            raise ValueError(msg)
 
-        if self.n_splits > 0 and self.n_splits < 3:
-            raise ValueError("n_splits must be at least 3")
+        if self.n_splits > 0 and self.n_splits < THERE_ARE_AT_LEAST_THREE_SPLITS:
+            msg = "n_splits must be at least 3"
+            raise ValueError(msg)
 
         self._fit(X, y, sample_weight, relative_penalties)
 
-        if self.n_splits >= 3:
+        if self.n_splits >= THERE_ARE_AT_LEAST_THREE_SPLITS:
             if groups is None:
                 self._cv = KFold(n_splits=self.n_splits, shuffle=True, random_state=self.random_state)
             else:
                 self._cv = GroupKFold(n_splits=self.n_splits)
 
-            cv_scores = _score_lambda_path(self, X, y, groups,
-                                           sample_weight,
-                                           relative_penalties,
-                                           self.scoring,
-                                           n_jobs=self.n_jobs,
-                                           verbose=self.verbose)
+            cv_scores = _score_lambda_path(
+                self,
+                X,
+                y,
+                groups,
+                sample_weight,
+                relative_penalties,
+                self.scoring,
+                n_jobs=self.n_jobs,
+                verbose=self.verbose,
+            )
 
             self.cv_mean_score_ = np.atleast_1d(np.mean(cv_scores, axis=0))
             self.cv_standard_error_ = np.atleast_1d(stats.sem(cv_scores))
@@ -248,14 +277,16 @@ class ElasticNet(BaseEstimator):
             self.lambda_max_inx_ = np.argmax(self.cv_mean_score_)
             self.lambda_max_ = self.lambda_path_[self.lambda_max_inx_]
 
-            target_score = self.cv_mean_score_[self.lambda_max_inx_] -\
-                self.cut_point * self.cv_standard_error_[self.lambda_max_inx_]
+            target_score = (
+                self.cv_mean_score_[self.lambda_max_inx_]
+                - self.cut_point * self.cv_standard_error_[self.lambda_max_inx_]
+            )
 
             self.lambda_best_inx_ = np.argwhere(self.cv_mean_score_ >= target_score)[0]
             self.lambda_best_ = self.lambda_path_[self.lambda_best_inx_]
 
             self.coef_ = self.coef_path_[..., self.lambda_best_inx_]
-            self.coef_ = self.coef_.squeeze(axis=self.coef_.ndim-1)
+            self.coef_ = self.coef_.squeeze(axis=self.coef_.ndim - 1)
             self.intercept_ = self.intercept_path_[..., self.lambda_best_inx_].squeeze()
             if self.intercept_.shape == ():  # convert 0d array to scalar
                 self.intercept_ = float(self.intercept_)
@@ -263,7 +294,6 @@ class ElasticNet(BaseEstimator):
         return self
 
     def _fit(self, X, y, sample_weight, relative_penalties):
-
         if self.lambda_path is not None:
             n_lambda = len(self.lambda_path)
             min_lambda_ratio = 1.0
@@ -271,121 +301,111 @@ class ElasticNet(BaseEstimator):
             n_lambda = self.n_lambda
             min_lambda_ratio = self.min_lambda_ratio
 
-        _y = y.astype(dtype=np.float64, order='F', copy=True)
-        _sample_weight = sample_weight.astype(dtype=np.float64, order='F',
-                                              copy=True)
+        _y = y.astype(dtype=np.float64, order="F", copy=True)
+        _sample_weight = sample_weight.astype(dtype=np.float64, order="F", copy=True)
 
         exclude_vars = 0
 
         if relative_penalties is None:
-            relative_penalties = np.ones(X.shape[1], dtype=np.float64,
-                                         order='F')
+            relative_penalties = np.ones(X.shape[1], dtype=np.float64, order="F")
 
-        coef_bounds = np.empty((2, X.shape[1]), dtype=np.float64, order='F')
+        coef_bounds = np.empty((2, X.shape[1]), dtype=np.float64, order="F")
         coef_bounds[0, :] = self.lower_limits
         coef_bounds[1, :] = self.upper_limits
 
-        if X.shape[1] > X.shape[0]:
-            # the glmnet docs suggest using a different algorithm for the case
-            # of p >> n
-            algo_flag = 2
-        else:
-            algo_flag = 1
-
+        algo_flag = 2 if X.shape[1] > X.shape[0] else 1
         # This is a stopping criterion (nx)
         # R defaults to nx = num_features, and ne = num_features + 1
-        if self.max_features is None:
-            max_features = X.shape[1]
-        else:
-            max_features = self.max_features
-
+        max_features = X.shape[1] if self.max_features is None else self.max_features
         if issparse(X):
             _x = csc_matrix(X, dtype=np.float64, copy=True)
 
-            (self.n_lambda_,
-             self.intercept_path_,
-             ca,
-             ia,
-             nin,
-             _,  # rsq
-             self.lambda_path_,
-             _,  # nlp
-             jerr) = spelnet(algo_flag,
-                             self.alpha,
-                             _x.shape[0],
-                             _x.shape[1],
-                             _x.data,
-                             _x.indptr + 1,  # Fortran uses 1-based indexing
-                             _x.indices + 1,
-                             _y,
-                             _sample_weight,
-                             exclude_vars,
-                             relative_penalties,
-                             coef_bounds,
-                             max_features,
-                             X.shape[1] + 1,
-                             min_lambda_ratio,
-                             self.lambda_path,
-                             self.tol,
-                             n_lambda,
-                             self.standardize,
-                             self.fit_intercept,
-                             self.max_iter)
+            (
+                self.n_lambda_,
+                self.intercept_path_,
+                ca,
+                ia,
+                nin,
+                _,  # rsq
+                self.lambda_path_,
+                _,  # nlp
+                jerr,
+            ) = spelnet(
+                algo_flag,
+                self.alpha,
+                _x.shape[0],
+                _x.shape[1],
+                _x.data,
+                _x.indptr + 1,  # Fortran uses 1-based indexing
+                _x.indices + 1,
+                _y,
+                _sample_weight,
+                exclude_vars,
+                relative_penalties,
+                coef_bounds,
+                max_features,
+                X.shape[1] + 1,
+                min_lambda_ratio,
+                self.lambda_path,
+                self.tol,
+                n_lambda,
+                self.standardize,
+                self.fit_intercept,
+                self.max_iter,
+            )
         else:
-            _x = X.astype(dtype=np.float64, order='F', copy=True)
-
-            (self.n_lambda_,
-             self.intercept_path_,
-             ca,
-             ia,
-             nin,
-             _,  # rsq
-             self.lambda_path_,
-             _,  # nlp
-             jerr) = elnet(algo_flag,
-                           self.alpha,
-                           _x,
-                           _y,
-                           _sample_weight,
-                           exclude_vars,
-                           relative_penalties,
-                           coef_bounds,
-                           X.shape[1] + 1,
-                           min_lambda_ratio,
-                           self.lambda_path,
-                           self.tol,
-                           max_features,
-                           n_lambda,
-                           self.standardize,
-                           self.fit_intercept,
-                           self.max_iter)
+            _x = X.astype(dtype=np.float64, order="F", copy=True)
+            (
+                self.n_lambda_,
+                self.intercept_path_,
+                ca,
+                ia,
+                nin,
+                _,  # rsq
+                self.lambda_path_,
+                _,  # nlp
+                jerr,
+            ) = elnet(
+                algo_flag,
+                self.alpha,
+                _x,
+                _y,
+                _sample_weight,
+                exclude_vars,
+                relative_penalties,
+                coef_bounds,
+                X.shape[1] + 1,
+                min_lambda_ratio,
+                self.lambda_path,
+                self.tol,
+                max_features,
+                n_lambda,
+                self.standardize,
+                self.fit_intercept,
+                self.max_iter,
+            )
 
         # raises RuntimeError if self.jerr_ is nonzero
         self.jerr_ = jerr
         _check_error_flag(self.jerr_)
 
-        self.lambda_path_ = self.lambda_path_[:self.n_lambda_]
+        self.lambda_path_ = self.lambda_path_[: self.n_lambda_]
         self.lambda_path_ = _fix_lambda_path(self.lambda_path_)
         # trim the pre-allocated arrays returned by glmnet to match the actual
         # number of values found for lambda
-        self.intercept_path_ = self.intercept_path_[:self.n_lambda_]
-        ca = ca[:, :self.n_lambda_]
-        nin = nin[:self.n_lambda_]
+        self.intercept_path_ = self.intercept_path_[: self.n_lambda_]
+        ca = ca[:, : self.n_lambda_]
+        nin = nin[: self.n_lambda_]
         self.coef_path_ = solns(_x.shape[1], ca, ia, nin)
 
         return self
 
     def decision_function(self, X, lamb=None):
-        lambda_best = None
-        if hasattr(self, 'lambda_best_'):
-            lambda_best = self.lambda_best_
-
+        lambda_best = self.lambda_best_ if hasattr(self, "lambda_best_") else None
         lamb = _check_user_lambda(self.lambda_path_, lambda_best, lamb)
-        coef, intercept = _interpolate_model(self.lambda_path_,
-                                             self.coef_path_,
-                                             self.intercept_path_, lamb)
+        coef, intercept = _interpolate_model(self.lambda_path_, self.coef_path_, self.intercept_path_, lamb)
 
-        X = check_array(X, accept_sparse='csr')
+        X = check_array(X, accept_sparse="csr")
         z = X.dot(coef) + intercept
 
         # drop last dimension (lambda path) when we are predicting for a

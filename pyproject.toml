@@ -1,23 +1,90 @@
 [project]
-name = "python-glmnet"
-version = "2.2.2.post2"
+name = "python_glmnet"
 description = "Python wrapper for glmnet"
+authors = [
+    {name="Civis Analytics Inc", email="opensource@replicahq.com"}
+]
+requires-python = ">=3.10"
 readme = 'README.rst'
-requires-python = ">=3.9"
+version = "2.6.1"
 dependencies = [
-    "numpy>=1.9.2",
-    "scikit-learn>=0.18.0",
-    "scipy>=0.14.1",
-    "joblib>=0.14.1",
+    "numpy>=1.26.4",
+    "scikit-learn>=1.4.0",
+    "scipy>=1.12.0",
+    "joblib>=1.3.0",
+    "setuptools>=75.3.0",
+]
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.1",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Topic :: Scientific/Engineering",
 ]
 
+[project.urls]
+homepage = "https://github.com/replicahq/python-glmnet"
+repository = "https://github.com/replicahq/python-glmnet"
+
 [build-system]
-build-backend = "setuptools.build_meta"
+build-backend = "mesonpy"
 requires = [
-    "numpy==1.22.4; python_version=='3.9'",
-    "numpy==1.22.4; python_version=='3.10'",
-    "numpy==1.23.2; python_version=='3.11'",
-    "numpy; python_version>'3.11'",
+    "meson-python>=0.16.0", "numpy>=2.1", "ninja>=1.11", "meson>=1.1"
+]
+
+[tool.coverage.run]
+branch = true
+source = ["glmnet"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 100
+
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = [
+    "--import-mode=importlib",
+]
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning:.*(jupyter_client).*",
+]
+
+
+[tool.pdm]
+
+[tool.pdm.options]
+install = ["--no-isolation"]
+
+[tool.pdm.scripts]
+format = "ruff format src/"
+lint = "ruff check --fix src/"
+test = "nox -s tests"
+all = {composite = ["format", "lint", "test"]}
+
+[tool.pdm.build]
+includes = []
+
+[dependency-groups]
+dev = [
     "setuptools",
-    "wheel"
+    "meson-python>=0.16.0",
+    "ninja>=1.8.2",
+    "ruff>=0.7.3",
+    "coverage[toml]>=7.6.7",
+    "pytest>=8.3.3",
+    "nox[uv]>=2024.10.9",
+    "pytest-lazy-fixtures>=1.1.1",
+    "pytest-randomly>=3.16.0",
+    "pytest-xdist[psutil]>=3.6.1",
 ]
