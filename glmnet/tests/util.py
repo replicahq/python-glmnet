@@ -79,8 +79,6 @@ def sanity_check_cv_attrs(m, is_clf=False):
         assert m.cv_mean_score_.size == m.n_lambda_, "wrong size for cv_mean_score_"
         assert m.cv_standard_error_.size == m.n_lambda_, "wrong size for cv_standard_error_"
         assert m.lambda_max_ is not None, "lambda_max_ is not set"
-        assert (m.lambda_max_inx_ >= 0 and m.lambda_max_inx_ < m.n_lambda_,
-            "lambda_max_inx_ is outside bounds of lambda_path_")
+        assert m.lambda_max_inx_ >= 0 and m.lambda_max_inx_ < m.n_lambda_, "lambda_max_inx_ is outside bounds of lambda_path_"
         assert m.lambda_best_ is not None, "lambda_best_ is not set"
-        assert (m.lambda_best_inx_ >= 0 and m.lambda_best_inx_ < m.n_lambda_,
-            "lambda_best_inx_ is outside bounds of lambda_path_")
+        assert m.lambda_best_inx_ >= 0 and m.lambda_best_inx_ < m.n_lambda_, "lambda_best_inx_ is outside bounds of lambda_path_"

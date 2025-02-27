@@ -8,7 +8,7 @@ from glmnet.tests.util import sanity_check_logistic, sanity_check_regression
 pd = None
 try:
     import pandas as pd
-except:
+except Exception:
     pass
 
 

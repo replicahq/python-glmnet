@@ -37,6 +37,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/civisanalytics/python-glmnet"
 
+[tool.ruff]
+lint.ignore = ["E741"]  # Ignore ambiguous-variable-name rule
+
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
 cmake.version = ">=3.15"

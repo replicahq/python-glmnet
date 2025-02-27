@@ -56,7 +56,7 @@ def build_module():
     ]
     
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         print("Successfully built _glmnet extension module")
         return 0
     except subprocess.CalledProcessError as e:
