@@ -24,43 +24,57 @@ jobs:
       matrix:
         os: [macos-13, macos-14, ubuntu-20.04]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         name: Install Python
         with:
           python-version: '3.10'
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.22.0
         env:
-          CIBW_BEFORE_ALL_MACOS: "brew unlink gcc && brew link gcc" # gfortran and libs don't seem to be linked by default for some reason
-          CIBW_BUILD: "cp39-* cp310-* cp311-*"
-          # Skip extra linux cpu archs and pypy
+          CIBW_BEFORE_ALL_MACOS: "brew unlink gcc && brew link gcc"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
           CIBW_SKIP: "*_aarch64 *_i686 *_ppc64le *_s390x pp* *universal2*"
-      - uses: actions/upload-artifact@v2
+          # Set deployment target based on runner OS
+          CIBW_ENVIRONMENT_MACOS: >-
+            MACOSX_DEPLOYMENT_TARGET=14.0
+          # Additional environment variables for better compatibility
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >-
+            DYLD_LIBRARY_PATH=/opt/homebrew/lib delocate-wheel
+            --require-archs {delocate_archs}
+            -w {dest_dir} -v {wheel}
+      - uses: actions/upload-artifact@v4
         with:
+          name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         name: Install Python
         with:
           python-version: '3.10'
       - name: Build sdist
         run: pip install build && python -m build --sdist
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
+          name: sdist
           path: dist/*.tar.gz
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     if: (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
