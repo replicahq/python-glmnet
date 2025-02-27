@@ -38,6 +38,7 @@ jobs:
           CIBW_SKIP: "*_aarch64 *_i686 *_ppc64le *_s390x pp* *universal2*"
       - uses: actions/upload-artifact@v4
         with:
+          name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
   build_sdist:
     name: Build source distribution
@@ -52,6 +53,7 @@ jobs:
         run: pip install build && python -m build --sdist
       - uses: actions/upload-artifact@v4
         with:
+          name: sdist
           path: dist/*.tar.gz
   upload_pypi:
     needs: [build_wheels, build_sdist]
@@ -60,7 +62,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
