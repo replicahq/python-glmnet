@@ -1,6 +1,11 @@
 name: Build
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:  # Allow manual triggering for testing
 
 jobs:
   build_wheels:
@@ -9,7 +14,7 @@ jobs:
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, macos-13, macos-14]
 
     steps:
       - name: Provide gfortran (macOS)
@@ -19,23 +24,58 @@ jobs:
           # https://github.com/cbg-ethz/dce/blob/master/.github/workflows/pkgdown.yaml
           brew install gcc@11
           sudo ln -s /usr/local/bin/gfortran-11 /usr/local/bin/gfortran
-          sudo mkdir /usr/local/gfortran
+          sudo mkdir -p /usr/local/gfortran
           sudo ln -s /usr/local/Cellar/gcc@11/*/lib/gcc/11 /usr/local/gfortran/lib
           gfortran --version
+          
+      - name: Install Linux Fortran compiler
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran
 
       - uses: actions/checkout@v4
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
-        # env:
-        #   CIBW_SOME_OPTION: value
-        #    ...
-        # with:
-        #   package-dir: .
-        #   output-dir: wheelhouse
-        #   config-file: "{package}/pyproject.toml"
+        env:
+          # Set environment for building with fortran
+          CIBW_ENVIRONMENT: "FC=gfortran"
+          CIBW_BEFORE_BUILD: "pip install numpy scikit-build-core meson ninja"
+          CIBW_TEST_REQUIRES: "pytest numpy scipy scikit-learn"
+          CIBW_TEST_COMMAND: "python -c \"import glmnet; import numpy as np; X = np.random.rand(100, 10); y = np.random.rand(100); model = glmnet.ElasticNet(); model.fit(X, y); preds = model.predict(X[:5]); print('Test passed!')\""
+          # Skip Python 3.6 and 3.7 as they're EOL
+          CIBW_SKIP: "cp36-* cp37-* pp* *-musllinux*"
 
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
+          
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for version determination
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build scikit-build-core numpy wheel
+
+      - name: Build sdist
+        run: |
+          python -m build --sdist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
