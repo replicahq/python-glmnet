@@ -16,7 +16,7 @@ Python GLMNET
    :alt: Supported python versions for python-glmnet
 
 Fork of `python-glmnet <https://github.com/replicahq/python-glmnet>`_ with support for more recent
-Python versions.
+Python versions. The package itself is not otherwise maintained; see `glmstar <https://github.com/jonathan-taylor/glmstar>` for a more recent library based on a newer version of the underlying ``glmnet`` package.
 
 This is a Python wrapper for the fortran library used in the R package
 `glmnet <http://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html>`__.
